@@ -31,7 +31,7 @@ const upload = multer({ storage: storage, fileFilter: fileFilter });
 router.post('/', upload.array('images'), authMiddleware, propertyController.addProperty);
 
 // Pozostałe trasy
-router.put('/:id', authMiddleware, propertyController.updateProperty);
+router.patch('/:id', authMiddleware, propertyController.updateProperty);
 router.delete('/:id', authMiddleware, propertyController.deleteProperty);
 router.get('/',   propertyController.getAllProperties);
 router.get('/:id',    propertyController.getPropertyById);

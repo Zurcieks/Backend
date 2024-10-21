@@ -42,7 +42,7 @@ app.use(
       }
       return callback(null, true);
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Jeśli potrzebujesz obsługiwać ciasteczka lub uwierzytelnianie
   })
@@ -65,6 +65,7 @@ app.use("/api/auth", authRoutes);
 
 // Endpointy ofert nieruchomości
 app.use("/properties", propertyRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 
