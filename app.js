@@ -28,7 +28,7 @@ bcrypt.hash(plainPassword, 10, (err, hash) => {
 testPassword();
 
 // Konfiguracja CORS
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = ["https://www.investingeorgia.com.pl/"];
 
 app.use(
   cors({
