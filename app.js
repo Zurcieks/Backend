@@ -28,13 +28,19 @@ bcrypt.hash(plainPassword, 10, (err, hash) => {
 testPassword();
 
 // Konfiguracja CORS
-const allowedOrigins = ["https://www.investingeorgia.com.pl/"];
+const allowedOrigins = [
+  "https://www.backend-production-0309.up.railway.app",  
+  "https://www.investingeorgia.com.pl",  
+  "http://localhost:3000",  
+];
 
 app.use(
   cors({
     origin: function (origin, callback) {
       // Pozwól na żądania bez origin (np. z curl, Postman)
       if (!origin) return callback(null, true);
+
+      // Sprawdź, czy domena jest w dozwolonych pochodzeniach
       if (allowedOrigins.indexOf(origin) === -1) {
         const msg =
           "The CORS policy for this site does not allow access from the specified Origin.";
@@ -44,7 +50,7 @@ app.use(
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Jeśli potrzebujesz obsługiwać ciasteczka lub uwierzytelnianie
+    credentials: true, // Jeśli używasz ciasteczek lub sesji
   })
 );
 
