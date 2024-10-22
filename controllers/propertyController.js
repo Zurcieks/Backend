@@ -116,11 +116,26 @@ exports.updateProperty = async (req, res) => {
 // Usunięcie oferty
 exports.deleteProperty = async (req, res) => {
   try {
-    const property = await Property.findByIdAndDelete(req.params.id);
+    // Znajdź ofertę przed usunięciem, aby uzyskać URL-e zdjęć
+    const property = await Property.findById(req.params.id);
     if (!property) {
       return res.status(404).json({ message: 'Nie znaleziono oferty.' });
     }
-    res.status(200).json({ message: 'Oferta została pomyślnie usunięta.' });
+
+    // Usuń obrazy przypisane do oferty
+    const imageDeletionPromises = property.images.map(async (imageUrl) => {
+      // Wyodrębnienie public_id z URL-a obrazu
+      const publicId = imageUrl.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`real_estate_offers/${publicId}`);
+    });
+
+    // Poczekaj, aż wszystkie obrazy zostaną usunięte
+    await Promise.all(imageDeletionPromises);
+
+    // Usuń ofertę z bazy danych
+    await Property.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ message: 'Oferta oraz przypisane obrazy zostały pomyślnie usunięte.' });
   } catch (error) {
     console.error('Błąd usuwania oferty:', error);
     res.status(500).json({ message: error.message });
