@@ -1,56 +1,55 @@
 const express = require("express");
 const mongoose = require("mongoose");
-
-const cors = require("cors"); // Importowanie cors
+const cors = require("cors");
 const path = require("path");
 const authRoutes = require("./routes/auth");
 const propertyRoutes = require("./routes/PropertyRoutes");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const multer = require("multer");
 require("dotenv").config();
 
 const app = express();
-const bcrypt = require("bcryptjs");
-require("dotenv").config();
 
-const testPassword = async () => {
-  const plainPassword = "admin123"; // Twoje hasło
-  const hashedPassword = process.env.PASSWORD; // Hash z .env
-
-  const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
-  console.log("Czy hasło jest poprawne:", isMatch);
-};
-
-const plainPassword = "admin123"; // Twoje hasło do zahashowania
-bcrypt.hash(plainPassword, 10, (err, hash) => {
-  if (err) throw err;
-  console.log("Hashed password:", hash);
+// Konfiguracja Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-testPassword();
+// Konfiguracja multer-storage-cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "real_estate_offers", // Nazwa folderu, do którego będą trafiać pliki w Cloudinary
+    allowed_formats: ["jpg", "png"], // Akceptowane formaty
+  },
+});
+
+// Konfiguracja multer do obsługi przesyłania plików
+const upload = multer({ storage });
 
 // Konfiguracja CORS
 const allowedOrigins = [
-  "https://www.backend-production-0309.up.railway.app",  
-  "https://www.investingeorgia.com.pl",  
-  "http://localhost:3000",  
+  "https://www.backend-production-0309.up.railway.app",
+  "https://www.investingeorgia.com.pl",
+  "http://localhost:3000",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Pozwól na żądania bez origin (np. z curl, Postman)
       if (!origin) return callback(null, true);
-
-      // Sprawdź, czy domena jest w dozwolonych pochodzeniach
       if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
+        const msg = "The CORS policy for this site does not allow access from the specified Origin.";
         return callback(new Error(msg), false);
       }
       return callback(null, true);
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Jeśli używasz ciasteczek lub sesji
+    credentials: true,
   })
 );
 
@@ -66,15 +65,19 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+// Trasy
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
-
-// Endpointy ofert nieruchomości
 app.use("/properties", propertyRoutes);
 
+// Endpoint dodawania oferty nieruchomości z obrazami
+app.post("/properties", upload.array("images"), (req, res) => {
+  const images = req.files.map(file => file.path); // Linki do obrazów w Cloudinary
+  // Logika dodawania nieruchomości do bazy danych
+  res.status(200).json({ message: "Property added", images });
+});
 
 const PORT = process.env.PORT || 8080;
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

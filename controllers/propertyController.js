@@ -1,4 +1,12 @@
 const Property = require('../models/Property');
+const cloudinary = require('cloudinary').v2;
+
+// Konfiguracja Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Dodanie nowej oferty
 exports.addProperty = async (req, res) => {
@@ -23,8 +31,14 @@ exports.addProperty = async (req, res) => {
       return res.status(400).json({ message: 'Brak przesłanych zdjęć.' });
     }
 
-    // Mapowanie ścieżek do zapisanych obrazów
-    const images = req.files.map(file => `/uploads/${file.filename}`);
+    // Przesyłanie obrazów do Cloudinary
+    const images = [];
+    for (const file of req.files) {
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder: 'real_estate_offers', // Folder w Cloudinary
+      });
+      images.push(result.secure_url); // Zapisujemy bezpieczne URL-e obrazów
+    }
 
     // Tworzenie nowego dokumentu Property
     const property = new Property({
@@ -37,7 +51,7 @@ exports.addProperty = async (req, res) => {
       yearBuild: Number(yearBuild),
       floors: Number(floors),
       price: Number(price),
-      images,
+      images, // Przesłane obrazy
     });
 
     // Zapisanie dokumentu do bazy danych
